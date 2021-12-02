@@ -1,5 +1,16 @@
 <!DOCTYPE HTML>
 <html> 
+<style>
+body {
+  background-image: url('/static/blackboard.jpg');
+  background-repeat: no-repeat;
+}
+#c{
+    opacity:0.5;
+    background:transparent;
+    border: 10px solid black;
+}
+</style>
   <head> 
     <title>Websockets Assignment</title> 
     <meta charset="utf-8" /> 
@@ -47,15 +58,16 @@ world = {};
 //XXX: TODO Make this prettier!
 function drawCircle(context,entity) {
     with(context) {
-        beginPath();                
+        beginPath();              
         lineWidth = 3;
         var x = entity["x"];
         var y = entity["y"];
         //moveTo(x,y);
         fillStyle = entity["colour"];
         strokeStyle = fillStyle;
-        arc(x, y, (entity["radius"])?entity["radius"]:50, 0, 2.0 * Math.PI, false);  
-        stroke();                                
+        arc(x, y, (entity["radius"])?entity["radius"]:10, 0, 2.0 * Math.PI, false);
+        stroke();
+        fill();
     }
 }
 
@@ -64,7 +76,7 @@ function prepEntity(entity) {
         entity["colour"] = "#FF0000";
     }
     if (!entity["radius"]) {
-        entity["radius"] = 50;
+        entity["radius"] = 10;
     }
     return entity;
 }
@@ -125,6 +137,10 @@ function addEntity(entity, data) {
     world[entity] = data;
     drawNextFrame(); // (but should we?)
     //XXX: Send a XHTML Request that updates the entity you just modified!
+    req = {};
+    req[entity] = data;
+    socket.send(JSON.stringify(req));
+    // console.log(req)
 }
 var counter = 0;
 function addEntityWithoutName(data) {
@@ -239,9 +255,10 @@ mouse.mouseuppers.push(function(x,y,clicked,e) {
 });
 
 mouse.mousedraggers.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'green',
+    addEntityWithoutName({'x':x,'y':y,'colour':'yellow',
                           'radius':10});
 });
+
 
 
 function update() {
@@ -260,8 +277,14 @@ function wsSetup() {
     };
     socket.onmessage = function(msg) {  
         try {
-            debug("WebSocket Recv:" + msg.data);
-            //XXX: TODO What are you going to do here?            
+            //debug("WebSocket Recv:" + msg.data);
+            //XXX: TODO What are you going to do here?
+            console.log(msg.data)
+            update = JSON.parse(msg.data)
+            for (key in update){
+                world[key] = update[key]
+            }
+            drawNextFrame();
         } catch (e) {
             alert("socket on message: " + e);
         }
@@ -269,9 +292,6 @@ function wsSetup() {
 }
 
 wsSetup();
-
-
-
 
 // 30 frames per second
 setInterval( update, 1000/30.0);
